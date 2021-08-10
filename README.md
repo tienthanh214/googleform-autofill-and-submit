@@ -22,6 +22,8 @@ Each of the input elements which we need to fill data has format: ```name = "ent
 Try to fill each input box to know its id
 
 ## Write the Python script
+
+### Fill form
 Create a dictionary in which keys are the name attributes of each input element, and values are the data you need to fill out
 
 ```py
@@ -34,23 +36,37 @@ def fill_form():
         hour[0] = hour[0][1:]
 
     value = {
-        # Họ và tên
-        "entry.648944920": name,
-        # Đơn vị Tuần tra
-        "entry.1323047968": "Sài Gòn",
-        # Ngày Tuần tra
-        "entry.914980634_year": date[0],
-        "entry.914980634_month": date[1],
-        "entry.914980634_day": date[2],
-        # Thời gian Tuần tra
-        "entry.1734465153": hour[0] + 'h',
-        # Điểm tuần tra
-        "entry.436161856": ["Cà phê", "Bể bơi"],
-        # Kết quả tuần tra
-        "entry.1224443740": "Bình thường"
+         # Text
+        "entry.2112281434": name,
+        # Dropdown menu
+        "entry.1600556346": "Sài Gòn",
+        # Date
+        "entry.77071893_year": date[0],
+        "entry.77071893_month": date[1],
+        "entry.77071893_day": date[2],
+        # Hour
+        "entry.855769839": hour[0] + 'h',
+        # Checkbox 
+        "entry.819260047": ["Cà phê", "Bể bơi"],
+        # One choice
+        "entry.1682233942": "Okay"
     }
     print(value, flush = True)
     return value
 ```
+
+### Submit form
+Just use POST method in ```requests```
+```python
+def submit(url, data):
+    try:
+        requests.post(url, data = data)
+        print("Submitted successfully!")
+    except:
+        print("Error!")
+
+submit(url, fill_form())
+```
+Done!!!
 
 
