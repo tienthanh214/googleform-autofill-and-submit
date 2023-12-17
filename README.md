@@ -1,9 +1,17 @@
-# Task
+# 🚀 Google Form AutoFill and Submit
 Vietnamese version [here](https://tienthanh214.github.io/computer%20science/autofill-and-submit-ggform/)
 
 Someone send us a Google-form, and we need to fill it everyday or maybe every hour to report something.
-
 It seems to be boring, so I just think to write a script to build this auto-bot using **Python 3**
+
+This is a simple and lightweight script to automatically fill and submit a Google form.
+It's also include a request body *generator*, you can simply copy and paste a Google form URL, eliminating the need for manual inspection.
+
+
+## Prerequisites
+- Python 3.x
+- `requests` library (`pip install requests` or `pip install -r requirements.txt`)
+
 # Just build it
 ## Create and access URL
 The URL of the Google form will look like this:
@@ -16,7 +24,15 @@ https://docs.google.com/forms/d/e/form-index/formResponse
 ```
 
 ## Extract information
+### Automatically
+Just copy the Google form URL and run [form.py](form.py) script
+```bash
+python form.py <your-gg-form-url>
+```
 
+It will return a dictionary which contains the name attributes of each input element and the data you need to fill out
+
+### Manually
 Open the Google form, then open DevTools (inspect) for inspecting the input element.
 
 Each of the input elements which we need to fill data has format: ```name = "entry.id"```
@@ -71,4 +87,5 @@ submit(url, fill_form())
 ```
 Done!!!
 
-
+## Limitations
+Please note that this script currently operates only with Google Forms that do not require user authentication.
