@@ -11,6 +11,8 @@ import re
 
 import requests
 
+import generator
+
 form_url = "https://docs.google.com/forms/d/e/1FAIpQLSdwcwvrOeBG200L0tCSUHc1MLebycACWIi3qw0UBK31GE26Yg/viewform" 
 
 ALL_DATA_FIELDS = "FB_PUBLIC_LOAD_DATA_"
@@ -41,6 +43,7 @@ def get_fb_public_load_data(url: str):
         return None
     return extract_script_variables(ALL_DATA_FIELDS, response.text)
 
+""" ------ MAIN LOGIC ------ """
 def parse_form_entries(url: str):
     """
     In window.FB_PUBLIC_LOAD_DATA_ (as v) 
@@ -74,8 +77,8 @@ def parse_form_entries(url: str):
                 "container_name": entry_name,
                 "type": entry_type_id,
                 "required": sub_entry[2] == 1,
-                "name": ' - '.join(sub_entry[3]) if (len(sub_entry) > 3 and sub_entry[3]) else entry_name,
-                "options": [x[0] for x in sub_entry[1]] if sub_entry[1] else None,
+                "name": ' - '.join(sub_entry[3]) if (len(sub_entry) > 3 and sub_entry[3]) else None,
+                "options": [(x[0] if x[0] != "" else "!ANY TEXT")for x in sub_entry[1]] if sub_entry[1] else None,
             }
             result.append(info)
         return result
@@ -86,7 +89,22 @@ def parse_form_entries(url: str):
         
     return parsed_entries
 
+""" ------ OUTPUT ------ """
+def get_form_submit_request(url: str, output = "console"):
+    entries = parse_form_entries(url)
+    result = generator.generate_form_request_dict(entries)
+    if output == "console":
+        print(result)
+    elif output == "return":
+        return result
+    else:
+        # save as file
+        with open(output, "w") as f:
+            f.write(result)
+            print(f"Saved to {output}", flush = True)
+    pass
+
+
 
 if __name__ == "__main__":
-    entries = parse_form_entries(form_url)
-    print(entries)
+    get_form_submit_request(form_url)
