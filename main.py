@@ -1,7 +1,8 @@
-import requests
 import datetime
-import time
 import random
+import time
+
+import requests
 
 url = "https://docs.google.com/forms/u/0/d/e/1FAIpQLSdwcwvrOeBG200L0tCSUHc1MLebycACWIi3qw0UBK31GE26Yg/formResponse"
 
@@ -36,6 +37,7 @@ def fill_form():
         "entry.77071893_year": date[0],
         "entry.77071893_month": date[1],
         "entry.77071893_day": date[2],
+        # "entry.77071893": date[0] + '-' + date[1] + '-' + date[2],
         # Hour
         "entry.855769839": hour[0] + 'h',
         # Checkbox 
@@ -49,14 +51,16 @@ def fill_form():
 
 def submit(url, data):
     try:
-        requests.post(url, data = data)
-        print("Submitted successfully")
+        res = requests.post(url, data = data)
+        if res.status_code != 200:
+            # TODO: show error message
+            raise Exception("Error! Can't submit form", res.status_code)
         return True
-    except:
-        print("Error!")
+    except Exception as e:
+        print("Error!", e)
         return False
 
 '''----------------------------------------------------------------------'''
-print("Running script...", flush = True)
-
-submit(url, fill_form())
+if __name__ == "__main__":
+    print("Running script...", flush = True)
+    submit(url, fill_form())    
