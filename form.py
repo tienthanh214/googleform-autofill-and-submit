@@ -6,6 +6,7 @@
     Date: 2023-12-17
 """
 
+import argparse
 import json
 import re
 
@@ -13,8 +14,7 @@ import requests
 
 import generator
 
-form_url = "https://docs.google.com/forms/d/e/1FAIpQLSdwcwvrOeBG200L0tCSUHc1MLebycACWIi3qw0UBK31GE26Yg/viewform" 
-
+# constants
 ALL_DATA_FIELDS = "FB_PUBLIC_LOAD_DATA_"
 
 """ --------- Helper functions ---------  """
@@ -44,7 +44,7 @@ def get_fb_public_load_data(url: str):
     return extract_script_variables(ALL_DATA_FIELDS, response.text)
 
 """ ------ MAIN LOGIC ------ """
-def parse_form_entries(url: str):
+def parse_form_entries(url: str, only_required = False):
     """
     In window.FB_PUBLIC_LOAD_DATA_ (as v) 
     - v[1][1] is the form entries array
@@ -80,6 +80,8 @@ def parse_form_entries(url: str):
                 "name": ' - '.join(sub_entry[3]) if (len(sub_entry) > 3 and sub_entry[3]) else None,
                 "options": [(x[0] if x[0] != "" else "!ANY TEXT")for x in sub_entry[1]] if sub_entry[1] else None,
             }
+            if only_required and not info['required']:
+                continue
             result.append(info)
         return result
 
@@ -90,9 +92,9 @@ def parse_form_entries(url: str):
     return parsed_entries
 
 """ ------ OUTPUT ------ """
-def get_form_submit_request(url: str, output = "console"):
-    entries = parse_form_entries(url)
-    result = generator.generate_form_request_dict(entries)
+def get_form_submit_request(url: str, output = "console", only_required = False, with_comment = True):
+    entries = parse_form_entries(url, only_required = only_required)
+    result = generator.generate_form_request_dict(entries, with_comment)
     if output == "console":
         print(result)
     elif output == "return":
@@ -107,4 +109,11 @@ def get_form_submit_request(url: str, output = "console"):
 
 
 if __name__ == "__main__":
-    get_form_submit_request(form_url)
+    parser = argparse.ArgumentParser(description="Google Form Autofill and Submit")
+    parser.add_argument("url", help="Google Form URL", )
+    parser.add_argument("-o", "--output", default="console", help="Output file path (default: console)")
+    parser.add_argument("-r", "--required", action="store_true", help="Only include required fields")
+    parser.add_argument("-c", "--no-comment", action="store_true", help="Don't include explain comment for each field")
+    args = parser.parse_args()
+    get_form_submit_request(args.url, args.output, args.required, not args.no_comment)
+    pass
