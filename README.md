@@ -7,7 +7,7 @@ It seems to be boring, so I just think to write a script to build this auto-bot 
 This is a simple and lightweight script to automatically fill and submit a Google form.
 It's also include a request body *generator*, you can simply copy and paste a Google form URL, eliminating the need for manual inspection.
 
-
+*This document will guide you through the process of creating a Python script to automatically fill and submit a Google form.*
 ## Prerequisites
 - Python 3.x
 - `requests` library (`pip install requests` or `pip install -r requirements.txt`)
@@ -25,12 +25,22 @@ https://docs.google.com/forms/d/e/form-index/formResponse
 
 ## Extract information
 ### Automatically
-Just copy the Google form URL and run [form.py](form.py) script
+Just copy the Google form URL and run [form.py](form.py) script. The script will return a *dictionary* which contains the name attributes of each input element and the data you need to fill out. 
 ```bash
 python form.py <your-gg-form-url>
 ```
+The result will be printed to the console (by default) or saved to a file if the `-o` option is used.
 
-It will return a dictionary which contains the name attributes of each input element and the data you need to fill out
+For more information use the help command
+```bash
+python form.py -h
+```
+
+
+Example:
+```bash
+python form.py 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSdwcwvrOeBG200L0tCSUHc1MLebycACWIi3qw0UBK31GE26Yg/formResponse' -o results.txt
+```
 
 ### Manually
 Open the Google form, then open DevTools (inspect) for inspecting the input element.
