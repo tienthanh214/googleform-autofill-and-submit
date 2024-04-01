@@ -58,7 +58,10 @@ def parse_form_entries(url: str, only_required = False):
                 x[4][1][i][0] is the i-th entry value option (*)
             x[4][2] field required (1 if required, 0 if not) (*)
             x[4][3] name of Grid Choice, Linear Scale (in array)
-
+    - v[1][10][6]: determine the email field if the form request email
+        1: Do not collect email
+        2: required checkbox, get verified email
+        3: required responder input
     """
     url = get_form_response_url(url)
         
@@ -88,6 +91,17 @@ def parse_form_entries(url: str, only_required = False):
     parsed_entries = []
     for entry in v[1][1]:
         parsed_entries += parse_entry(entry)
+
+    # Collect email addresses
+    if v[1][10][6] > 1:
+        parsed_entries.append({
+            "id": "emailAddress",
+            "container_name": "Email Address",
+            "type": "email",
+            "required": True,
+            "options": "email address",
+            "name": '',
+        })
         
     return parsed_entries
 

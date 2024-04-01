@@ -43,7 +43,9 @@ def fill_form():
         # Checkbox 
         "entry.819260047": ["Cà phê", "Bể bơi"],
         # One choice
-        "entry.1682233942": "Okay"
+        "entry.1682233942": "Okay",
+        # Email address
+        "emailAddress": "abc@gmail.com"
     }
     print(value, flush = True)
     return value

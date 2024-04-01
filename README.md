@@ -36,7 +36,6 @@ For more information use the help command
 python form.py -h
 ```
 
-
 Example:
 ```bash
 python form.py 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSdwcwvrOeBG200L0tCSUHc1MLebycACWIi3qw0UBK31GE26Yg/formResponse' -o results.txt
@@ -48,6 +47,8 @@ Open the Google form, then open DevTools (inspect) for inspecting the input elem
 Each of the input elements which we need to fill data has format: ```name = "entry.id"```
 
 Try to fill each input box to know its id
+
+***Note***: if the form requires email, please add the `emailAddress` field
 
 ## Write the Python script
 
