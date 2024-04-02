@@ -67,7 +67,7 @@ def parse_form_entries(url: str, only_required = False):
         
     v = get_fb_public_load_data(url)
     if not v or not v[1] or not v[1][1]:
-        print("Error! Can't get form entries")
+        print("Error! Can't get form entries. Login may be required.")
         return None
     
     def parse_entry(entry):
@@ -108,6 +108,8 @@ def parse_form_entries(url: str, only_required = False):
 """ ------ OUTPUT ------ """
 def get_form_submit_request(url: str, output = "console", only_required = False, with_comment = True):
     entries = parse_form_entries(url, only_required = only_required)
+    if not entries:
+        return None
     result = generator.generate_form_request_dict(entries, with_comment)
     if output == "console":
         print(result)

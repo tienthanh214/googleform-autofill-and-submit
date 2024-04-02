@@ -8,7 +8,7 @@ def generate_form_request_dict(entries, with_comment: bool = True):
             # gen all options (if any)
             if entry['options']:
                 result += f"    #   Options: {entry['options']}\n"
-            elif entry['type'] == 'text':
+            else:
                 result += f"    #   Option: any text\n"
         # gen entry id
         if entry['type'] == 'email':
