@@ -29,26 +29,6 @@ def fill_form():
         hour[0] = hour[0][1:]
 
     value = {
-        # Text
-        "entry.2112281434": name,
-        # Dropdown menu
-        "entry.1600556346": "Sài Gòn",
-        # Date
-        "entry.77071893_year": date[0],
-        "entry.77071893_month": date[1],
-        "entry.77071893_day": date[2],
-        # "entry.77071893": date[0] + '-' + date[1] + '-' + date[2],
-        # Hour
-        "entry.855769839": hour[0] + 'h',
-        # Checkbox 
-        "entry.819260047": ["Cà phê", "Bể bơi"],
-        # One choice
-        "entry.1682233942": "Okay",
-        # Email address
-        "emailAddress": "abc@gmail.com"
-    }
-
-    value = {
         # Name (required)
         #   Option: any text
         "entry.2112281434": name,
@@ -59,6 +39,8 @@ def fill_form():
         "entry.77071893_year": date[0],
         "entry.77071893_month": date[1],
         "entry.77071893_day": date[2],
+        "entry.1734133505": "14:20",
+
         # "entry.77071893": date[0] + '-' + date[1] + '-' + date[2],
         # Hour
         "entry.855769839": hour[0] + 'h',
