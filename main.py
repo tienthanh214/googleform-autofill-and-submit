@@ -47,6 +47,40 @@ def fill_form():
         # Email address
         "emailAddress": "abc@gmail.com"
     }
+
+    value = {
+        # Name (required)
+        #   Option: any text
+        "entry.2112281434": name,
+        # Where (required)
+        #   Options: ['Ahihi', 'New York', 'Sài Gòn', 'Paris']
+        "entry.1600556346": "Sài Gòn",
+        # Date
+        "entry.77071893_year": date[0],
+        "entry.77071893_month": date[1],
+        "entry.77071893_day": date[2],
+        # "entry.77071893": date[0] + '-' + date[1] + '-' + date[2],
+        # Hour
+        "entry.855769839": hour[0] + 'h',
+        # Checkbox 
+        "entry.819260047": ["Cà phê", "Bể bơi"],
+        # One choice
+        "entry.1682233942": "Okay",
+        # Grid Choice: Question 2 
+        #   Options: ['A', 'B', 'C']
+        "entry.505915866": "A",
+        # Grid checkbox: Question A 
+        #   Options: ['1', '2', '3']
+        "entry.1795513578": "2",
+        # Grid checkbox: Question B 
+        #   Options: ['1', '2', '3']
+        "entry.1615989655": "3",
+        # Page History 
+        #   Options: from 0 to (number of page - 1)
+        "pageHistory": "0,1",
+        # Email address
+        "emailAddress": "abc@gmail.com",
+    }
     print(value, flush = True)
     return value
 

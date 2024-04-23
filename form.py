@@ -17,6 +17,8 @@ import generator
 # constants
 ALL_DATA_FIELDS = "FB_PUBLIC_LOAD_DATA_"
 
+FORM_SESSION_TYPE_ID = 8
+
 """ --------- Helper functions ---------  """
 
 def get_form_response_url(url: str):
@@ -89,7 +91,11 @@ def parse_form_entries(url: str, only_required = False):
         return result
 
     parsed_entries = []
+    page_count = 0
     for entry in v[1][1]:
+        if entry[3] == FORM_SESSION_TYPE_ID:
+            page_count += 1
+            continue
         parsed_entries += parse_entry(entry)
 
     # Collect email addresses
@@ -97,10 +103,18 @@ def parse_form_entries(url: str, only_required = False):
         parsed_entries.append({
             "id": "emailAddress",
             "container_name": "Email Address",
-            "type": "email",
+            "type": "required",
             "required": True,
             "options": "email address",
-            "name": '',
+        })
+    if page_count > 0:
+        parsed_entries.append({
+            "id": "pageHistory",
+            "container_name": "Page History",
+            "type": "required",
+            "required": False,
+            "options": "from 0 to (number of page - 1)",
+            "default_value": ','.join(map(str,range(page_count + 1)))
         })
         
     return parsed_entries
