@@ -4,7 +4,7 @@ def generate_form_request_dict(entries, with_comment: bool = True):
     for entry in entries:
         if with_comment:
             # gen name of entry
-            result += f"    # {entry['container_name']}{': ' + entry.get('name', '') if entry.get('name') else ''} {'(required)' * entry['required']}\n"
+            result += f"    # {entry['container_name']}{(': ' + entry['name']) if entry.get('name') else ''}{' (required)' * entry['required']}\n"
             # gen all options (if any)
             if entry['options']:
                 result += f"    #   Options: {entry['options']}\n"
