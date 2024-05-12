@@ -1,5 +1,5 @@
 def generate_form_request_dict(entries, with_comment: bool = True):
-    """ Generate a dict of form request data from entries"""
+    """ Generate a dict of form request data from entries """
     result = "{\n"
     for entry in entries:
         if with_comment:
@@ -20,18 +20,18 @@ def generate_form_request_dict(entries, with_comment: bool = True):
     result += "}"
     return result
 
-''' ------ TYPE ID ------ 
-    0: Short answer
-    1: Paragraph
-    2: Multiple choice
-    3: Dropdown
-    4: Checkboxes
-    5: Linear scale
-    7: Grid choice
-    9: Date
-    10: Time
-'''
 def get_form_type_value_rule(type_id):
+    ''' ------ TYPE ID ------ 
+        0: Short answer
+        1: Paragraph
+        2: Multiple choice
+        3: Dropdown
+        4: Checkboxes
+        5: Linear scale
+        7: Grid choice
+        9: Date
+        10: Time
+    '''
     if type_id == 9:
         return "YYYY-MM-DD"
     if type_id == 10:

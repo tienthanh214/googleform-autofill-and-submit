@@ -1,5 +1,5 @@
 """ Get entries from form 
-    Version 1: 
+    Version 2: 
         - support submit almost all types of google form fields
         - only support single page form
         - not support upload file (because it's required to login)
@@ -22,6 +22,7 @@ FORM_SESSION_TYPE_ID = 8
 """ --------- Helper functions ---------  """
 
 def get_form_response_url(url: str):
+    ''' Convert form url to form response url '''
     url = url.replace('/viewform', '/formResponse')
     if not url.endswith('/formResponse'):
         if not url.endswith('/'):
@@ -29,8 +30,8 @@ def get_form_response_url(url: str):
         url += 'formResponse'
     return url
 
-
 def extract_script_variables(name :str, html: str):
+    """ Extract a variable from a script tag in a HTML page """
     pattern = re.compile(r'var\s' + name + r'\s=\s(.*?);')
     match = pattern.search(html)
     if not match:
@@ -39,13 +40,15 @@ def extract_script_variables(name :str, html: str):
     return json.loads(value_str)
 
 def get_fb_public_load_data(url: str):
+    """ Get form data from a google form url """
     response = requests.get(url, timeout=10)
     if response.status_code != 200:
         print("Error! Can't get form data", response.status_code)
         return None
     return extract_script_variables(ALL_DATA_FIELDS, response.text)
 
-""" ------ MAIN LOGIC ------ """
+# ------ MAIN LOGIC ------ #
+
 def parse_form_entries(url: str, only_required = False):
     """
     In window.FB_PUBLIC_LOAD_DATA_ (as v) 
@@ -83,7 +86,7 @@ def parse_form_entries(url: str, only_required = False):
                 "type": entry_type_id,
                 "required": sub_entry[2] == 1,
                 "name": ' - '.join(sub_entry[3]) if (len(sub_entry) > 3 and sub_entry[3]) else None,
-                "options": [(x[0] if x[0] != "" else "!ANY TEXT")for x in sub_entry[1]] if sub_entry[1] else None,
+                "options": [(x[0] or "any text") for x in sub_entry[1]] if sub_entry[1] else None,
             }
             if only_required and not info['required']:
                 continue
@@ -119,8 +122,14 @@ def parse_form_entries(url: str, only_required = False):
         
     return parsed_entries
 
-""" ------ OUTPUT ------ """
-def get_form_submit_request(url: str, output = "console", only_required = False, with_comment = True):
+# ------ OUTPUT ------ #
+def get_form_submit_request(
+    url: str,
+    output = "console",
+    only_required = False,
+    with_comment = True
+):
+    ''' Get form request body data '''
     entries = parse_form_entries(url, only_required = only_required)
     if not entries:
         return None
@@ -131,19 +140,19 @@ def get_form_submit_request(url: str, output = "console", only_required = False,
         return result
     else:
         # save as file
-        with open(output, "w") as f:
+        with open(output, "w", encoding="utf-8") as f:
             f.write(result)
             print(f"Saved to {output}", flush = True)
-    pass
+            f.close()
+    return None
 
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Google Form Autofill and Submit")
-    parser.add_argument("url", help="Google Form URL", )
+    parser.add_argument("url", help="Google Form URL")
     parser.add_argument("-o", "--output", default="console", help="Output file path (default: console)")
     parser.add_argument("-r", "--required", action="store_true", help="Only include required fields")
     parser.add_argument("-c", "--no-comment", action="store_true", help="Don't include explain comment for each field")
     args = parser.parse_args()
     get_form_submit_request(args.url, args.output, args.required, not args.no_comment)
-    pass

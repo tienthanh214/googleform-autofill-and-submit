@@ -1,10 +1,9 @@
 import datetime
 import random
-import time
 
 import requests
 
-url = "https://docs.google.com/forms/u/0/d/e/1FAIpQLSdwcwvrOeBG200L0tCSUHc1MLebycACWIi3qw0UBK31GE26Yg/formResponse"
+URL = "https://docs.google.com/forms/u/0/d/e/1FAIpQLSdwcwvrOeBG200L0tCSUHc1MLebycACWIi3qw0UBK31GE26Yg/formResponse"
 
 def get_gmt_time(delta = 7):
     ''' get local time Vietnam (+7)
@@ -27,7 +26,6 @@ def fill_form():
     hour = hour.split(':')
     if (int(hour[0]) < 10):
         hour[0] = hour[0][1:]
-
     value = {
         # Name (required)
         #   Option: any text
@@ -39,9 +37,10 @@ def fill_form():
         "entry.77071893_year": date[0],
         "entry.77071893_month": date[1],
         "entry.77071893_day": date[2],
-        "entry.1734133505": "14:20",
-
+        # Date (YYYY-MM-DD)
         # "entry.77071893": date[0] + '-' + date[1] + '-' + date[2],
+        # Time (HH:MM (24h format))
+        "entry.1734133505": hour[0] + ':' + hour[1],
         # Hour
         "entry.855769839": hour[0] + 'h',
         # Checkbox 
@@ -61,24 +60,24 @@ def fill_form():
         #   Options: from 0 to (number of page - 1)
         "pageHistory": "0,1",
         # Email address
-        "emailAddress": "abc@gmail.com",
+        "emailAddress": "test_mail@gmail.com",
     }
     print(value, flush = True)
     return value
 
 
 def submit(url, data):
+    ''' Submit form to url with data '''
     try:
-        res = requests.post(url, data = data)
+        res = requests.post(url, data=data, timeout=5)
         if res.status_code != 200:
-            # TODO: show error message
             raise Exception("Error! Can't submit form", res.status_code)
         return True
     except Exception as e:
         print("Error!", e)
         return False
 
-'''----------------------------------------------------------------------'''
+# ----------------------------------------------------------------------
 if __name__ == "__main__":
     print("Running script...", flush = True)
-    submit(url, fill_form())    
+    submit(URL, fill_form())    
