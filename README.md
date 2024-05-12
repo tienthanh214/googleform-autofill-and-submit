@@ -48,7 +48,9 @@ Each of the input elements which we need to fill data has format: ```name = "ent
 
 Try to fill each input box to know its id
 
-***Note***: if the form requires email, please add the `emailAddress` field
+***Note***: 
+- If the form requires email, please add the `emailAddress` field
+- For multiple pages form, please add the `pageHistory` field with a comma-separated list of page numbers (starting from 0) if the form has multiple pages. For example, a 4-page form would have `"pageHistory": "0,1,2,3"`
 
 ## Write the Python script
 
