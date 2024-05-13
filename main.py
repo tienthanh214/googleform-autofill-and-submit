@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import json
 import random
@@ -6,7 +7,6 @@ import requests
 
 import form
 
-URL = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSdwcwvrOeBG200L0tCSUHc1MLebycACWIi3qw0UBK31GE26Yg/formResponse'
 
 def fill_random_value(type_id, entry_id, options):
     ''' Fill random value for a form entry 
@@ -34,7 +34,7 @@ def fill_random_value(type_id, entry_id, options):
         return datetime.datetime.now().strftime('%H:%M')
     return ''
 
-def generate_random_request_body(url: str, only_required = False):
+def generate_request_body(url: str, only_required = False):
     ''' Generate random request body data '''
     data = form.get_form_submit_request(
         url,
@@ -56,12 +56,17 @@ def submit(url: str, data: any):
     res = requests.post(url, data=data, timeout=5)
     if res.status_code != 200:
         print("Error! Can't submit form", res.status_code)
-   
 
-if __name__ == '__main__':
+def main(url, only_required = False):
     try:
-        payload = generate_random_request_body(URL, only_required = False)
-        submit(URL, payload)
+        payload = generate_request_body(url, only_required = only_required)
+        submit(url, payload)
     except Exception as e:
         print("Error!", e)
-        
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Submit google form with custom data')
+    parser.add_argument('url', help='Google Form URL')
+    parser.add_argument('-r', '--required', action='store_true', help='Only include required fields')
+    args = parser.parse_args()
+    main(args.url, args.required)
