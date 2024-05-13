@@ -1,6 +1,11 @@
+""" Generator module for generating form request data """
+import json
+
+
 def generate_form_request_dict(entries, with_comment: bool = True):
     """ Generate a dict of form request data from entries """
     result = "{\n"
+    entry_id = 0
     for entry in entries:
         if with_comment:
             # gen name of entry
@@ -11,12 +16,16 @@ def generate_form_request_dict(entries, with_comment: bool = True):
             else:
                 result += f"    #   Option: {get_form_type_value_rule(entry['type'])}\n"
         # gen entry id
-        if entry['type'] == 'required':
-            result += f'    "{entry["id"]}": "{entry.get("default_value", "")}",\n'
-            continue
-
-        result += f'    "entry.{entry["id"]}": "",\n'
-
+        entry_id += 1
+        default_value = entry.get("default_value", "")
+        default_value = json.dumps(default_value, ensure_ascii=False)
+            
+        if entry.get("type") == "required":
+            result += f'    "{entry["id"]}": {default_value}'
+        else:
+            result += f'    "entry.{entry["id"]}": {default_value}'
+        result += f"{(entry_id < len(entries)) * ','}\n"
+    # remove the last comma
     result += "}"
     return result
 

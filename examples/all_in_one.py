@@ -33,11 +33,11 @@ def fill_form():
         #   Options: ['Ahihi', 'New York', 'Sài Gòn', 'Paris']
         "entry.1600556346": "Sài Gòn",
         # Date
-        "entry.77071893_year": date[0],
-        "entry.77071893_month": date[1],
-        "entry.77071893_day": date[2],
+        # "entry.77071893_year": date[0],
+        # "entry.77071893_month": date[1],
+        # "entry.77071893_day": date[2],
         # Date (YYYY-MM-DD)
-        # "entry.77071893": date[0] + '-' + date[1] + '-' + date[2],
+        "entry.77071893": date[0] + '-' + date[1] + '-' + date[2],
         # Time (HH:MM (24h format))
         "entry.1734133505": hour[0] + ':' + hour[1],
         # Hour

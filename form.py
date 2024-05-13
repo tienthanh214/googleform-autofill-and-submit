@@ -16,8 +16,8 @@ import generator
 
 # constants
 ALL_DATA_FIELDS = "FB_PUBLIC_LOAD_DATA_"
-
 FORM_SESSION_TYPE_ID = 8
+ANY_TEXT_FIELD = "ANY TEXT!!"
 
 """ --------- Helper functions ---------  """
 
@@ -86,7 +86,7 @@ def parse_form_entries(url: str, only_required = False):
                 "type": entry_type_id,
                 "required": sub_entry[2] == 1,
                 "name": ' - '.join(sub_entry[3]) if (len(sub_entry) > 3 and sub_entry[3]) else None,
-                "options": [(x[0] or "any text") for x in sub_entry[1]] if sub_entry[1] else None,
+                "options": [(x[0] or ANY_TEXT_FIELD) for x in sub_entry[1]] if sub_entry[1] else None,
             }
             if only_required and not info['required']:
                 continue
@@ -122,15 +122,31 @@ def parse_form_entries(url: str, only_required = False):
         
     return parsed_entries
 
+def fill_form_entries(entries, fill_algorithm):
+    """ Fill form entries with fill_algorithm """
+    for entry in entries:
+        if entry.get('default_value'):
+            continue
+        # remove ANY_TEXT_FIELD from options to prevent choosing it
+        options = (entry['options'] or [])[::]
+        if ANY_TEXT_FIELD in options:
+            options.remove(ANY_TEXT_FIELD)
+        
+        entry['default_value'] = fill_algorithm(entry['type'], entry['id'], options)
+    return entries
+
 # ------ OUTPUT ------ #
 def get_form_submit_request(
     url: str,
     output = "console",
     only_required = False,
-    with_comment = True
+    with_comment = True,
+    fill_algorithm = None,
 ):
     ''' Get form request body data '''
     entries = parse_form_entries(url, only_required = only_required)
+    if fill_algorithm:
+        entries = fill_form_entries(entries, fill_algorithm)
     if not entries:
         return None
     result = generator.generate_form_request_dict(entries, with_comment)
