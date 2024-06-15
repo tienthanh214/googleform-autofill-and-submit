@@ -61,6 +61,7 @@ def main(url, only_required = False):
     try:
         payload = generate_request_body(url, only_required = only_required)
         submit(url, payload)
+        print("Done!!!")
     except Exception as e:
         print("Error!", e)
 
