@@ -132,7 +132,8 @@ def fill_form_entries(entries, fill_algorithm):
         if ANY_TEXT_FIELD in options:
             options.remove(ANY_TEXT_FIELD)
         
-        entry['default_value'] = fill_algorithm(entry['type'], entry['id'], options)
+        entry['default_value'] = fill_algorithm(entry['type'], entry['id'], options, 
+            required = entry['required'], entry_name = entry['container_name'])
     return entries
 
 # ------ OUTPUT ------ #

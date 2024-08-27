@@ -8,16 +8,18 @@ import requests
 import form
 
 
-def fill_random_value(type_id, entry_id, options):
+def fill_random_value(type_id, entry_id, options, required = False, entry_name = ''):
     ''' Fill random value for a form entry 
         Customize your own fill_algorithm here
         Note: please follow this func signature to use as fill_algorithm in form.get_form_submit_request '''
     # Customize for specific entry_id
     if entry_id == 'emailAddress':
         return 'your_email@gmail.com'
+    if entry_name == "Short answer":
+        return 'Random answer!'
     # Random value for each type
     if type_id in [0, 1]: # Short answer and Paragraph
-        return ''
+        return '' if not required else 'Ok!'
     if type_id == 2: # Multiple choice
         return random.choice(options)
     if type_id == 3: # Dropdown
