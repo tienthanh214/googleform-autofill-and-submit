@@ -30,22 +30,49 @@ def get_form_response_url(url: str):
         url += 'formResponse'
     return url
 
-def extract_script_variables(name :str, html: str):
-    """ Extract a variable from a script tag in a HTML page """
-    pattern = re.compile(r'var\s' + name + r'\s=\s(.*?);')
+def extract_script_variables(name: str, html: str):
+    pattern = re.compile(r'var\s' + name + r'\s*=\s*(\[[\s\S]*?\]);')
     match = pattern.search(html)
-    if not match:
-        return None
-    value_str = match.group(1)
-    return json.loads(value_str)
+    if match:
+        value_str = match.group(1)
+        print("")
+        print(f"Extracted data (first 500 characters):")
+        print(value_str[:500])
+        print("")
+        print(f"Last 500 characters:")
+        print(value_str[-500:])
+        try:
+            return json.loads(value_str)
+        except json.JSONDecodeError:
+            print("JSON parsing failed, trying ast.literal_eval")
+            try:
+                import ast
+                return ast.literal_eval(value_str)
+            except:
+                print("ast.literal_eval also failed")
+                return None
+    return None
 
 def get_fb_public_load_data(url: str):
     """ Get form data from a google form url """
-    response = requests.get(url, timeout=10)
-    if response.status_code != 200:
-        print("Error! Can't get form data", response.status_code)
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()  # Raise an exception for bad status codes
+        print("")
+        print(f"Successfully fetched URL: {url}")
+        print("")
+        print(f"Response status code: {response.status_code}")
+        
+        data = extract_script_variables(ALL_DATA_FIELDS, response.text)
+        if data is None:
+            print(f"Failed to extract {ALL_DATA_FIELDS} from the response")
+            print("")
+            print("First 500 characters of response:")
+            print(response.text[:500])
+        return data
+    except requests.RequestException as e:
+        print(f"Error fetching URL: {e}")
         return None
-    return extract_script_variables(ALL_DATA_FIELDS, response.text)
 
 # ------ MAIN LOGIC ------ #
 
