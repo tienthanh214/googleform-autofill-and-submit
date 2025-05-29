@@ -173,7 +173,6 @@ def fill_form_entries(page_entries, default_next_page_ids, fill_algorithm):
     current_page_id = 0
     entries = []
     while (True):
-        print(f"Processing page {current_page_id} of {len(page_entries)}")
         next_page_id = default_next_page_ids[current_page_id]
         for entry in page_entries[current_page_id]:
             # Remove ANY_TEXT_FIELD from options to prevent choosing it
@@ -190,7 +189,6 @@ def fill_form_entries(page_entries, default_next_page_ids, fill_algorithm):
                 next_page_id = entry['next_page_id'][entry['default_value']]
 
             entries.append(entry)
-        print(f"Page {current_page_id} entries: {entries}")
         if next_page_id < 0:
             break  # Case ignore all and submit immediately
         current_page_id = next_page_id
@@ -226,9 +224,6 @@ def get_form_submit_request(
 ):
     ''' Get form request body data '''
     page_entries, default_next_page_ids = parse_form_entries(url, only_required = only_required)
-    for page in page_entries:
-        print(page)
-        print("----------")
     if not page_entries:
         return None
     if fill_algorithm:
