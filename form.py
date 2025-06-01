@@ -30,13 +30,13 @@ def get_form_response_url(url: str):
         url += 'formResponse'
     return url
 
-def extract_script_variables(name :str, html: str):
+def extract_script_variables(name:str, html: str):
     """ Extract a variable from a script tag in a HTML page """
-    pattern = re.compile(r'var\s' + name + r'\s=\s(.*?);')
+    pattern = re.compile(r'var\s' + name + r'\s=\s(.*?)\];')
     match = pattern.search(html)
     if not match:
         return None
-    value_str = match.group(1)
+    value_str = match.group(1) + ']'
     return json.loads(value_str)
 
 def get_fb_public_load_data(url: str):
