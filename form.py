@@ -47,6 +47,27 @@ def extract_script_variables(name: str, html: str):
             print("ast.literal_eval also failed")
             return None
 
+def split_form_into_pages(form_data_json):
+    """
+    Split the form's fields into logical pages (sections)
+    based on the structure of FB_PUBLIC_LOAD_DATA_.
+    """
+    entries = form_data_json[1][1]
+    pages = []
+    current_page = []
+
+    for entry in entries:
+        if entry[3] == FORM_SESSION_TYPE_ID:
+            if current_page:
+                pages.append(current_page)
+                current_page = []
+        current_page.append(entry)
+
+    if current_page:
+        pages.append(current_page)
+
+    return pages
+
 def get_fb_public_load_data(url: str):
     """ Get form data from a google form url """
     try:
@@ -75,8 +96,10 @@ def parse_form_entries(url: str, only_required = False):
             x[4][0] is the entry id (we only need this to make request) (*)
             x[4][1] is the array of entry value (if null then text)
                 x[4][1][i][0] is the i-th entry value option (*)
+                x[4][1][i][2] is the next page id (if this option is selected)
             x[4][2] field required (1 if required, 0 if not) (*)
             x[4][3] name of Grid Choice, Linear Scale (in array)
+        x[5] is the next page id (if this is a page, then it will be null)
     - v[1][10][6]: determine the email field if the form request email
         1: Do not collect email
         2: required checkbox, get verified email
@@ -88,7 +111,32 @@ def parse_form_entries(url: str, only_required = False):
     if not v or not v[1] or not v[1][1]:
         print("Error! Can't get form entries. Login may be required.")
         return None
-    
+
+    pages = split_form_into_pages(v)
+    page_count = len(pages)
+
+    # Initialize map of page id -> page index (from 0 to page_count - 1)
+    page_ids = {}
+    for i, page in enumerate(pages):
+        for entry in page:
+            if entry[3] == FORM_SESSION_TYPE_ID:
+                page_ids[entry[0]] = i
+                break
+            
+    # Find default next page index for each page
+    default_next_page_ids = [0 for _ in range(page_count)]
+    for i, page in enumerate(pages):
+        default_next_page_ids[i] = i + 1 # Default next page is the next page in the list
+        for entry in page:
+            if entry[5] is not None and entry[5] > 0:
+                if entry[0] == entry[5]: # Case ignore all and submit immediately
+                    default_next_page_ids[i] = -1
+                    break
+                if entry[5] not in page_ids:
+                    print(f"Warning: Page id {entry[5]} not found in page ids. Defaulting to next page.")
+                    continue
+                default_next_page_ids[i] = page_ids[entry[5]]
+
     def parse_entry(entry):
         entry_name = entry[1]
         entry_type_id = entry[3]
@@ -101,53 +149,83 @@ def parse_form_entries(url: str, only_required = False):
                 "required": sub_entry[2] == 1,
                 "name": ' - '.join(sub_entry[3]) if (len(sub_entry) > 3 and sub_entry[3]) else None,
                 "options": [(x[0] or ANY_TEXT_FIELD) for x in sub_entry[1]] if sub_entry[1] else None,
+                "next_page_id": {}
             }
+            if sub_entry[1]:
+                for option in sub_entry[1]:
+                    if len(option) > 2 and option[2] is not None:
+                        info['next_page_id'][option[0]] = page_ids.get(option[2], 0)
             if only_required and not info['required']:
                 continue
             result.append(info)
         return result
 
-    parsed_entries = []
-    page_count = 0
-    for entry in v[1][1]:
-        if entry[3] == FORM_SESSION_TYPE_ID:
-            page_count += 1
-            continue
-        parsed_entries += parse_entry(entry)
+    # Only parse entries that are questions, each page is a list of entries
+    page_entries = []
+    for page in pages:
+        page_entries.append([])
+        for entry in page:
+            if entry[3] == FORM_SESSION_TYPE_ID:
+                continue
+            page_entries[-1].extend(parse_entry(entry))
 
     # Collect email addresses
     if v[1][10][6] > 1:
-        parsed_entries.append({
+        page_entries.append([{
             "id": "emailAddress",
             "container_name": "Email Address",
             "type": "required",
             "required": True,
             "options": "email address",
-        })
-    if page_count > 0:
-        parsed_entries.append({
+            "next_page_id": {},
+        }])
+
+    return page_entries, default_next_page_ids
+
+def fill_form_entries(page_entries, default_next_page_ids, fill_algorithm):
+    """ Fill form entries page by page with fill_algorithm """
+    current_page_id = 0
+    entries = []
+    while (True):
+        next_page_id = default_next_page_ids[current_page_id]
+        for entry in page_entries[current_page_id]:
+            # Remove ANY_TEXT_FIELD from options to prevent choosing it
+            options = (entry['options'] or [])[::]
+            if ANY_TEXT_FIELD in options:
+                options.remove(ANY_TEXT_FIELD)
+            
+            # Fill value for the entry
+            entry['default_value'] = fill_algorithm(entry['type'], entry['id'], options, 
+                required = entry['required'], entry_name = entry['container_name'])
+            
+            # Determine next page id if needed
+            if entry['next_page_id'] and entry['default_value'] in entry['next_page_id']:
+                next_page_id = entry['next_page_id'][entry['default_value']]
+
+            entries.append(entry)
+        if next_page_id < 0:
+            break  # Case ignore all and submit immediately
+        current_page_id = next_page_id
+        
+    # Fill pageHistory
+    if len(page_entries) > 0:
+        page_entries.append([{
             "id": "pageHistory",
             "container_name": "Page History",
             "type": "required",
             "required": False,
             "options": "from 0 to (number of page - 1)",
-            "default_value": ','.join(map(str,range(page_count + 1)))
-        })
+            "default_value": ','.join(map(str,range(len(page_entries) + 1))),
+            "next_page_id": {},
+        }])
         
-    return parsed_entries
+    # Fill email address if needed
+    if page_entries[-1] and len(page_entries[-1]) == 1 and page_entries[-1][-1]['id'] == "emailAddress":
+        email_entry = page_entries[-1][-1]
+        email_entry['default_value'] = fill_algorithm(0, email_entry['id'], [], 
+            required = email_entry['required'], entry_name = email_entry['container_name'])
+        entries.append(email_entry)
 
-def fill_form_entries(entries, fill_algorithm):
-    """ Fill form entries with fill_algorithm """
-    for entry in entries:
-        if entry.get('default_value'):
-            continue
-        # remove ANY_TEXT_FIELD from options to prevent choosing it
-        options = (entry['options'] or [])[::]
-        if ANY_TEXT_FIELD in options:
-            options.remove(ANY_TEXT_FIELD)
-        
-        entry['default_value'] = fill_algorithm(entry['type'], entry['id'], options, 
-            required = entry['required'], entry_name = entry['container_name'])
     return entries
 
 # ------ OUTPUT ------ #
@@ -159,11 +237,17 @@ def get_form_submit_request(
     fill_algorithm = None,
 ):
     ''' Get form request body data '''
-    entries = parse_form_entries(url, only_required = only_required)
-    if fill_algorithm:
-        entries = fill_form_entries(entries, fill_algorithm)
-    if not entries:
+    page_entries, default_next_page_ids = parse_form_entries(url, only_required = only_required)
+    if not page_entries:
         return None
+    if fill_algorithm:
+        entries = fill_form_entries(page_entries, default_next_page_ids, fill_algorithm)
+    else:
+        # Flatten the list of entries
+        entries = []
+        for page in page_entries:
+            for entry in page:
+                entries.append(entry)
     result = generator.generate_form_request_dict(entries, with_comment)
     if output == "console":
         print(result)
