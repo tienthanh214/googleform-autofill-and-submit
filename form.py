@@ -33,42 +33,29 @@ def get_form_response_url(url: str):
 def extract_script_variables(name: str, html: str):
     pattern = re.compile(r'var\s' + name + r'\s*=\s*(\[[\s\S]*?\]);')
     match = pattern.search(html)
-    if match:
-        value_str = match.group(1)
-        print("")
-        print(f"Extracted data (first 500 characters):")
-        print(value_str[:500])
-        print("")
-        print(f"Last 500 characters:")
-        print(value_str[-500:])
+    if not match:
+        return None
+    value_str = match.group(1)
+    try:
+        return json.loads(value_str)
+    except json.JSONDecodeError:
+        print("JSON parsing failed, trying ast.literal_eval")
         try:
-            return json.loads(value_str)
-        except json.JSONDecodeError:
-            print("JSON parsing failed, trying ast.literal_eval")
-            try:
-                import ast
-                return ast.literal_eval(value_str)
-            except:
-                print("ast.literal_eval also failed")
-                return None
-    return None
+            import ast
+            return ast.literal_eval(value_str)
+        except:
+            print("ast.literal_eval also failed")
+            return None
 
 def get_fb_public_load_data(url: str):
     """ Get form data from a google form url """
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()  # Raise an exception for bad status codes
-        print("")
-        print(f"Successfully fetched URL: {url}")
-        print("")
-        print(f"Response status code: {response.status_code}")
-        
+        print(f"Successfully fetched URL: {url} - Status Code: {response.status_code}")
         data = extract_script_variables(ALL_DATA_FIELDS, response.text)
-        if data is None:
-            print(f"Failed to extract {ALL_DATA_FIELDS} from the response")
-            print("")
-            print("First 500 characters of response:")
-            print(response.text[:500])
+        if not data:
+            print(f"Failed to extract {ALL_DATA_FIELDS} from the response.")
         return data
     except requests.RequestException as e:
         print(f"Error fetching URL: {e}")
