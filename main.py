@@ -53,8 +53,7 @@ def submit(url: str, data: any):
     ''' Submit form to url with data '''
     url = form.get_form_response_url(url)
     print("Submitting to", url)
-    print("Data:", data, flush = True)
-   
+    print("Data:", json.dumps(data, indent=2), flush = True)
     res = requests.post(url, data=data, timeout=5)
     if res.status_code != 200:
         print("Error! Can't submit form", res.status_code)

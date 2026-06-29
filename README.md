@@ -30,6 +30,7 @@ It's also include a request body *generator* for those who prefer to manually in
 
 ## Features
 - [x] Supports multiple pages Google forms
+- [x] Supports conditional form
 - [x] Supports Google Forms that collect email addresses (Responder input)
 - [x] Automatically generates the request body using the `form.py` script
 - [x] Auto-fills the form with random values (customizable) and submits it

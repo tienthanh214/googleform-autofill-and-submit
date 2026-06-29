@@ -125,35 +125,42 @@ def parse_form_entries(url: str, only_required = False):
     # Find default next page index for each page
     default_next_page_ids = [0 for _ in range(page_count)]
     for i, page in enumerate(pages):
-        default_next_page_ids[i] = i + 1 # Default next page is the next page in the list
+        default_next_page_ids[i] = i + 1 if i + 1 < page_count else -1
         for entry in page:
-            if entry[5] is not None and entry[5] > 0:
-                if entry[0] == entry[5]: # Case ignore all and submit immediately
-                    default_next_page_ids[i] = -1
-                    break
-                if entry[5] not in page_ids:
+            if entry[3] != FORM_SESSION_TYPE_ID or entry[5] is None:
+                continue
+            if entry[5] == entry[0]:  # Submit immediately
+                default_next_page_ids[i] = -1
+                break
+            if entry[5] > 0:
+                if entry[5] in page_ids:
+                    default_next_page_ids[i] = page_ids[entry[5]]
+                else:
                     print(f"Warning: Page id {entry[5]} not found in page ids. Defaulting to next page.")
-                    continue
-                default_next_page_ids[i] = page_ids[entry[5]]
+            break
 
-    def parse_entry(entry):
+    def parse_entry(entry, section_name=None):
         entry_name = entry[1]
         entry_type_id = entry[3]
         result = []
         for sub_entry in entry[4]:
+            name = ' - '.join(sub_entry[3]) if (len(sub_entry) > 3 and sub_entry[3]) else None
             info = {
                 "id": sub_entry[0],
-                "container_name": entry_name,
+                "container_name": entry_name or section_name or name,
                 "type": entry_type_id,
                 "required": sub_entry[2] == 1,
-                "name": ' - '.join(sub_entry[3]) if (len(sub_entry) > 3 and sub_entry[3]) else None,
+                "name": name,
                 "options": [(x[0] or ANY_TEXT_FIELD) for x in sub_entry[1]] if sub_entry[1] else None,
                 "next_page_id": {}
             }
             if sub_entry[1]:
                 for option in sub_entry[1]:
                     if len(option) > 2 and option[2] is not None:
-                        info['next_page_id'][option[0]] = page_ids.get(option[2], 0)
+                        if option[2] <= 0:
+                            info['next_page_id'][option[0] or ANY_TEXT_FIELD] = -1
+                        else:
+                            info['next_page_id'][option[0] or ANY_TEXT_FIELD] = page_ids.get(option[2], -1)
             if only_required and not info['required']:
                 continue
             result.append(info)
@@ -162,68 +169,75 @@ def parse_form_entries(url: str, only_required = False):
     # Only parse entries that are questions, each page is a list of entries
     page_entries = []
     for page in pages:
+        section_name = page[0][1] if page and page[0][3] == FORM_SESSION_TYPE_ID else None
         page_entries.append([])
         for entry in page:
             if entry[3] == FORM_SESSION_TYPE_ID:
                 continue
-            page_entries[-1].extend(parse_entry(entry))
+            page_entries[-1].extend(parse_entry(entry, section_name))
 
     # Collect email addresses
+    email_entry = None
     if v[1][10][6] > 1:
-        page_entries.append([{
+        email_entry = {
             "id": "emailAddress",
             "container_name": "Email Address",
             "type": "required",
             "required": True,
             "options": "email address",
             "next_page_id": {},
-        }])
+        }
 
-    return page_entries, default_next_page_ids
+    return page_entries, default_next_page_ids, email_entry
 
-def fill_form_entries(page_entries, default_next_page_ids, fill_algorithm):
+def fill_form_entries(page_entries, default_next_page_ids, email_entry, fill_algorithm):
     """ Fill form entries page by page with fill_algorithm """
     current_page_id = 0
+    visited_pages = set()
     entries = []
-    while (True):
+    while current_page_id not in visited_pages:
+        visited_pages.add(current_page_id)
         next_page_id = default_next_page_ids[current_page_id]
         for entry in page_entries[current_page_id]:
+            entries.append(entry)
+            if fill_algorithm is None:
+                continue
             # Remove ANY_TEXT_FIELD from options to prevent choosing it
             options = (entry['options'] or [])[::]
             if ANY_TEXT_FIELD in options:
                 options.remove(ANY_TEXT_FIELD)
             
             # Fill value for the entry
+            entry_name = ' - '.join(filter(None, [entry.get('container_name'), entry.get('name')]))
             entry['default_value'] = fill_algorithm(entry['type'], entry['id'], options, 
-                required = entry['required'], entry_name = entry['container_name'])
-            
+                required = entry['required'], entry_name = entry_name)
+
             # Determine next page id if needed
             if entry['next_page_id'] and entry['default_value'] in entry['next_page_id']:
                 next_page_id = entry['next_page_id'][entry['default_value']]
 
-            entries.append(entry)
         if next_page_id < 0:
-            break  # Case ignore all and submit immediately
+            break
         current_page_id = next_page_id
         
+    # Fill email address if needed
+    if email_entry:
+        if fill_algorithm is not None:
+            email_entry['default_value'] = fill_algorithm(0, email_entry['id'], [], 
+                required = email_entry['required'], entry_name = email_entry['container_name'])
+        entries.append(email_entry)
+
     # Fill pageHistory
     if len(page_entries) > 0:
-        page_entries.append([{
+        entries.append({
             "id": "pageHistory",
             "container_name": "Page History",
             "type": "required",
             "required": False,
             "options": "from 0 to (number of page - 1)",
-            "default_value": ','.join(map(str,range(len(page_entries) + 1))),
+            "default_value": ','.join(map(str, range(len(page_entries)))),
             "next_page_id": {},
-        }])
-        
-    # Fill email address if needed
-    if page_entries[-1] and len(page_entries[-1]) == 1 and page_entries[-1][-1]['id'] == "emailAddress":
-        email_entry = page_entries[-1][-1]
-        email_entry['default_value'] = fill_algorithm(0, email_entry['id'], [], 
-            required = email_entry['required'], entry_name = email_entry['container_name'])
-        entries.append(email_entry)
+        })
 
     return entries
 
@@ -236,17 +250,10 @@ def get_form_submit_request(
     fill_algorithm = None,
 ):
     ''' Get form request body data '''
-    page_entries, default_next_page_ids = parse_form_entries(url, only_required = only_required)
+    page_entries, default_next_page_ids, email_entry = parse_form_entries(url, only_required = only_required)
     if not page_entries:
         return None
-    if fill_algorithm:
-        entries = fill_form_entries(page_entries, default_next_page_ids, fill_algorithm)
-    else:
-        # Flatten the list of entries
-        entries = []
-        for page in page_entries:
-            for entry in page:
-                entries.append(entry)
+    entries = fill_form_entries(page_entries, default_next_page_ids, email_entry, fill_algorithm)
     result = generator.generate_form_request_dict(entries, with_comment)
     if output == "console":
         print(result)
